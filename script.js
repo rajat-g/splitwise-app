@@ -129,7 +129,7 @@ function loadExpenses() {
                 `<li class="expense-item">
                     <div class="expense-name">${expense.name}</div>
                     <div class="expense-details">
-                        Total: $${expense.amount}<br>
+                        Total: ₹${expense.amount}<br>
                         Paid by: ${payer}<br>
                         ${splitDetailsStr}
                     </div>
