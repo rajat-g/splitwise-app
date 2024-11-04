@@ -256,5 +256,10 @@ label {
 
 /* Split Details Input */
 .split-detail-input {
-    width: 180px;
+    width: 130px;
+}
+
+/* Add this near other utility classes */
+.hidden-option {
+    display: none;
 }

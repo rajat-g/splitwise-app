@@ -44,6 +44,12 @@ function loadPersons() {
             $("#person-select").append(`<option value="${person.id}">${person.name}</option>`);
             $("#split-with").append(`<option value="${person.id}">${person.name}</option>`);
         });
+        
+        // Initialize split-with options based on current payer
+        const selectedPayer = $("#person-select").val();
+        if (selectedPayer) {
+            updateSplitWithOptions(selectedPayer);
+        }
     };
 }
 
@@ -223,10 +229,25 @@ async function getPersonName(id) {
 // Form submission handlers and UI setup
 $(document).ready(() => {
 
-    // Handle split type changes
+    // Add this new handler for person-select changes
+    $("#person-select").change(function() {
+        const selectedPayer = $(this).val();
+        updateSplitWithOptions(selectedPayer);
+    });
+
+    // Add this handler for split-type changes
     $("#split-type").change(async function() {
         const splitType = $(this).val();
         const selectedPeople = $("#split-with").val();
+        const selectedPayer = $("#person-select").val();
+        
+        // If switching to equal split, update the split-with options
+        if (splitType === 'equal') {
+            updateSplitWithOptions(selectedPayer);
+        } else {
+            // Show all options when not equal split
+            $("#split-with option").removeClass('hidden-option');
+        }
         
         $("#split-details-container").empty();
         
@@ -305,8 +326,24 @@ $(document).ready(() => {
         $("#split-type").val('equal');
         $("#split-details-container").empty();
     });
-});
 
+});
+// Add this new function
+    function updateSplitWithOptions(payerId) {
+        const splitType = $("#split-type").val();
+        if (splitType === 'equal') {
+            // Hide the payer from split-with options
+            $("#split-with option").removeClass('hidden-option');
+            $(`#split-with option[value="${payerId}"]`).addClass('hidden-option');
+            
+            // Deselect the payer if they were selected
+            const splitWith = $("#split-with").val() || [];
+            if (splitWith.includes(payerId)) {
+                splitWith.splice(splitWith.indexOf(payerId), 1);
+                $("#split-with").val(splitWith);
+            }
+        }
+    }
 
 // Add this function to clear the database
 function clearDatabase() {
