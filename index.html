@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Splitwise App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Splitwise App</h1>
+        
+		<div class="clear-db-container">
+            <button id="clear-db" type="button" class="danger-button" onclick="clearDatabase();">
+                Clear All Data
+            </button>
+        </div>
+        <form id="person-form">
+            <input type="text" id="person-name" placeholder="Person Name" required>
+            <button type="submit">Add Person</button>
+        </form>
+        
+        <form id="expense-form">
+            <input type="text" id="expense-name" placeholder="Expense Name" required>
+            <input type="number" id="amount" placeholder="Amount" required>
+            <select id="person-select" required></select>
+            <label>Split with:</label>
+            <select id="split-with" multiple required></select>
+            <button type="submit">Add Expense</button>
+			<div class="split-type-container">
+            <label>Split Type:</label>
+            <select id="split-type" required>
+                <option value="equal">Equal Split</option>
+                <option value="exact">Exact Amounts</option>
+                <option value="percentage">Percentage Split</option>
+            </select>
+            <div id="split-details-container"></div>
+        </div>
+        </form>
+
+        <h2>Expenses</h2>
+        <ul id="expense-list"></ul>
+
+        <h2>Balances</h2>
+        <ul id="owes-list"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
