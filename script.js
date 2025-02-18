@@ -44,42 +44,53 @@ function loadPersons() {
             $("#person-select").append(`<option value="${person.id}">${person.name}</option>`);
             $("#split-with").append(`<option value="${person.id}">${person.name}</option>`);
         });
-        
-        // Initialize split-with options based on current payer
-        const selectedPayer = $("#person-select").val();
-        if (selectedPayer) {
-            updateSplitWithOptions(selectedPayer);
-        }
     };
 }
 
-function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith) {
+function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith, personId) {
     const amounts = {};
-    
-    switch(splitType) {
+
+    switch (splitType) {
         case 'equal':
-            // Each person's share (excluding the payer)
-            const sharePerPerson = totalAmount / (splitWith.length + 1);
+            const totalPeople = splitWith.length;
+            const sharePerPerson = totalAmount / totalPeople;
             
-            // Calculate what each person owes
             splitWith.forEach(id => {
                 amounts[id] = sharePerPerson;
             });
+			// Remove payer's amount only if they're in splitWith
+            if (splitWith.includes(personId)) {
+                delete amounts[personId];
+            }
             break;
-            
+
         case 'exact':
             splitWith.forEach((id, index) => {
                 amounts[id] = parseFloat(splitDetails[index]);
             });
             break;
-            
+
         case 'percentage':
             splitWith.forEach((id, index) => {
                 amounts[id] = (totalAmount * parseFloat(splitDetails[index])) / 100;
             });
             break;
+			
+		case 'shares':
+            const totalShares = splitDetails.reduce((sum, share) => sum + parseFloat(share), 0);
+            const perShare = totalAmount / totalShares;
+            
+            splitWith.forEach((id, index) => {
+                amounts[id] = perShare * parseFloat(splitDetails[index]);
+            });
+            
+            // Remove payer's amount only if they're in splitWith
+            if (splitWith.includes(personId)) {
+                delete amounts[personId];
+            }
+            break;
     }
-    
+
     return amounts;
 }
 
@@ -112,41 +123,80 @@ function loadExpenses() {
 
         // First calculate all expenses and balances
         for (const expense of expenses) {
-            // Display expense in the expense list
+            // Get payer and splitWith names
             const payer = await getPersonName(expense.personId);
             const splitWithNames = await Promise.all(expense.splitWith.map(id => getPersonName(id)));
-            
+
             let splitDetailsStr = '';
-            switch(expense.splitType) {
+			// Get all persons from the DB to check if all are involved
+			const allPersons = await new Promise((resolve) => {
+				const transaction = db.transaction(["persons"], "readonly");
+				const objectStore = transaction.objectStore("persons");
+				const req = objectStore.getAll();
+				req.onsuccess = (event) => resolve(event.target.result);
+			});
+            switch (expense.splitType) {
                 case 'equal':
-                    splitDetailsStr = 'Split equally';
+					if(expense.splitWith.length === allPersons.length) {
+						splitDetailsStr = 'Split equally';
+					} else {
+						splitDetailsStr = `Split equally between: ${expense.splitWith.map((amount, i) =>
+                        `${splitWithNames[i]}`).join(', ')}`;
+					}
                     break;
                 case 'exact':
-                    splitDetailsStr = `Split exactly: ${expense.splitDetails.map((amount, i) => 
-                        `${splitWithNames[i]}: $${amount}`).join(', ')}`;
+                    splitDetailsStr = `Split exactly: ${expense.splitDetails.map((amount, i) =>
+                        `${splitWithNames[i]}: ₹${amount}`).join(', ')}`;
                     break;
                 case 'percentage':
-                    splitDetailsStr = `Split by percentage: ${expense.splitDetails.map((percent, i) => 
+                    splitDetailsStr = `Split by percentage: ${expense.splitDetails.map((percent, i) =>
                         `${splitWithNames[i]}: ${percent}%`).join(', ')}`;
                     break;
+                case 'shares':
+					const allPersonIds = allPersons.map(person => person.id.toString());
+					// Check if the expense involves all persons in the DB
+					const allInvolved = (expense.splitWith.length === allPersonIds.length) &&
+										allPersonIds.every(id => expense.splitWith.includes(id));
+					
+					if (allInvolved) {
+						// Check if everyone has the same share
+						const shares = expense.splitDetails.map(s => parseFloat(s));
+						const firstShare = shares[0];
+						const allSame = shares.every(s => Math.abs(s - firstShare) < 0.001);
+						if (allSame) {
+							splitDetailsStr = "Split Equally";
+						} else {
+							splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
+								`${splitWithNames[i]}: ${share} shares`).join(', ')}`;
+						}
+					} else {
+						splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
+							`${splitWithNames[i]}: ${share} shares`).join(', ')}`;
+					}
+					break;
+
             }
 
+            // Append expense with enhanced labels and a delete button
             $("#expense-list").append(
                 `<li class="expense-item">
-                    <div class="expense-name">${expense.name}</div>
-                    <div class="expense-details">
-                        Total: ₹${expense.amount}<br>
-                        Paid by: ${payer}<br>
-                        ${splitDetailsStr}
+                    <div class="expense-info">
+                        <div class="expense-name">${expense.name}</div>
+                        <div class="expense-amount">Total: ₹${expense.amount}</div>
+                        <div class="expense-paid-by">Paid by: ${payer}</div>
+                        <div class="expense-split">${splitDetailsStr}</div>
                     </div>
+                    <button class="delete-expense danger-button" onclick="deleteExpense(${expense.id});">Delete</button>
                 </li>`
             );
 
+            // Calculate how much each person should pay and update balances
             const splitAmounts = calculateSplitAmounts(
                 parseFloat(expense.amount),
                 expense.splitType,
                 expense.splitDetails,
-                expense.splitWith
+                expense.splitWith,
+                expense.personId
             );
 
             // Update overall balances
@@ -176,7 +226,7 @@ function loadExpenses() {
 
             const [person1Id, person2Id] = pairKey.split('-');
             const reversePairKey = `${person2Id}-${person1Id}`;
-            
+
             // Skip if we've already processed this pair
             if (processedPairs.has(pairKey) || processedPairs.has(reversePairKey)) {
                 continue;
@@ -190,7 +240,7 @@ function loadExpenses() {
             const reverseAmount = owingDetails[reversePairKey] || 0;
             const netAmount = amount - reverseAmount;
 
-            if (Math.abs(netAmount) < 0.01) continue; // Skip if the net amount is effectively zero
+            if (Math.abs(netAmount) < 0.01) continue; // Skip if net amount is negligible
 
             let displayText, amountClass;
             if (netAmount > 0) {
@@ -230,74 +280,86 @@ async function getPersonName(id) {
 $(document).ready(() => {
 
     // Add this new handler for person-select changes
-    $("#person-select").change(function() {
-        const selectedPayer = $(this).val();
-        updateSplitWithOptions(selectedPayer);
+    $("#person-select").change(function () {
+        $("#split-type").trigger('change');
     });
 
     // Add this handler for split-type changes
-    $("#split-type").change(async function() {
+    $("#split-type").change(async function () {
         const splitType = $(this).val();
         const selectedPeople = $("#split-with").val();
         const selectedPayer = $("#person-select").val();
-        
-        // If switching to equal split, update the split-with options
-        if (splitType === 'equal') {
-            updateSplitWithOptions(selectedPayer);
-        } else {
-            // Show all options when not equal split
-            $("#split-with option").removeClass('hidden-option');
-        }
-        
+		
+    $("#split-details-container").empty();
+
         $("#split-details-container").empty();
-        
+
         if (splitType !== 'equal' && selectedPeople.length > 0) {
             // Get names for all selected people
             const detailsHtml = await Promise.all(selectedPeople.map(async personId => {
                 const personName = await getPersonName(parseInt(personId));
+				const placeholder = splitType === 'percentage' ? 'Percentage' :
+                              splitType === 'shares' ? 'Shares' : 'Amount';
+				const symbol = splitType === 'percentage' ? '%' :
+                           splitType === 'shares' ? 'shares' : '₹';
                 return `
                     <div class="split-detail">
                         <label>${personName}:</label>
                         <input type="number" 
                                class="split-detail-input" 
                                data-person="${personId}" 
-                               step="0.01" 
+                               step="${splitType === 'percentage' ? '0.01' : '1'}"
                                required 
-                               placeholder="${splitType === 'percentage' ? 'Percentage' : 'Amount'}"
+                               placeholder="${placeholder}"
+							   min="0"
+							   ${splitType === 'percentage' ? 'max="100"' : ''}
                         >
-                        ${splitType === 'percentage' ? '%' : '₹'}
+                        ${symbol}
                     </div>
                 `;
             }));
-            
+
             $("#split-details-container").html(detailsHtml.join(''));
         }
     });
 
     // Update split details when people selection changes
-    $("#split-with").change(function() {
+    $("#split-with").change(function () {
         $("#split-type").trigger('change');
     });
 
-    $("#person-form").submit(function(event) {
+    $("#person-form").submit(function (event) {
         event.preventDefault();
         const name = $("#person-name").val();
         addPerson(name);
         $("#person-name").val('');
     });
 
-    $("#expense-form").submit(function(event) {
+    $("#expense-form").submit(function (event) {
         event.preventDefault();
         const name = $("#expense-name").val();
         const amount = parseFloat($("#amount").val());
         const personId = $("#person-select").val();
         const splitWith = Array.from($("#split-with").val());
         const splitType = $("#split-type").val();
-        
+
         let splitDetails = [];
         if (splitType !== 'equal') {
             splitDetails = Array.from($(".split-detail-input")).map(input => $(input).val());
-            
+			
+			if (splitType === 'shares') {
+				const shares = splitDetails.map(s => parseFloat(s));
+				if (shares.some(s => s <= 0)) {
+					alert("Shares must be positive numbers!");
+					return;
+				}
+				const totalShares = shares.reduce((a, b) => a + b, 0);
+				if (totalShares <= 0) {
+					alert("Total shares must be greater than zero!");
+					return;
+				}
+			}
+
             // Validate total for exact amounts
             if (splitType === 'exact') {
                 const totalSplit = splitDetails.reduce((sum, val) => sum + parseFloat(val), 0);
@@ -306,7 +368,7 @@ $(document).ready(() => {
                     return;
                 }
             }
-            
+
             // Validate percentages
             if (splitType === 'percentage') {
                 const totalPercentage = splitDetails.reduce((sum, val) => sum + parseFloat(val), 0);
@@ -318,7 +380,7 @@ $(document).ready(() => {
         }
 
         addExpense(name, amount, personId, splitWith, splitType, splitDetails);
-        
+
         // Reset form
         $("#expense-name").val('');
         $("#amount").val('');
@@ -327,23 +389,21 @@ $(document).ready(() => {
         $("#split-details-container").empty();
     });
 
+	$("#simplify-debts").click(function() {
+        simplifyDebtsHandler();
+    });
 });
-// Add this new function
-    function updateSplitWithOptions(payerId) {
-        const splitType = $("#split-type").val();
-        if (splitType === 'equal') {
-            // Hide the payer from split-with options
-            $("#split-with option").removeClass('hidden-option');
-            $(`#split-with option[value="${payerId}"]`).addClass('hidden-option');
-            
-            // Deselect the payer if they were selected
-            const splitWith = $("#split-with").val() || [];
-            if (splitWith.includes(payerId)) {
-                splitWith.splice(splitWith.indexOf(payerId), 1);
-                $("#split-with").val(splitWith);
-            }
-        }
-    }
+
+// Function to delete an expense from the database
+function deleteExpense(expenseId) {
+    const transaction = db.transaction(["expenses"], "readwrite");
+    const expenseStore = transaction.objectStore("expenses");
+    expenseStore.delete(expenseId);
+    transaction.oncomplete = loadExpenses;
+    transaction.onerror = () => {
+        alert("Error deleting the expense!");
+    };
+}
 
 // Add this function to clear the database
 function clearDatabase() {
@@ -366,11 +426,110 @@ function clearDatabase() {
         $("#person-select").empty();
         $("#split-with").empty();
         $("#split-details-container").empty();
-        
+
         alert("All data has been cleared successfully!");
     };
 
     transaction.onerror = () => {
         alert("Error clearing the database!");
+    };
+}
+
+// Function to simplify debts using net balances
+function simplifyDebts(balances) {
+    // Convert the balances object into an array of { id, balance } objects,
+    // filtering out negligible values.
+    let persons = [];
+    for (const id in balances) {
+        if (Math.abs(balances[id]) > 0.01) {
+            persons.push({ id: id, balance: balances[id] });
+        }
+    }
+
+    // Separate creditors (positive balance) and debtors (negative balance)
+    let creditors = persons.filter(p => p.balance > 0).sort((a, b) => b.balance - a.balance);
+    let debtors = persons.filter(p => p.balance < 0).sort((a, b) => a.balance - b.balance);
+
+    let transactions = [];
+    // Greedy settlement: match the largest creditor with the largest debtor
+    while (creditors.length > 0 && debtors.length > 0) {
+        let creditor = creditors[0];
+        let debtor = debtors[0];
+        let amount = Math.min(creditor.balance, -debtor.balance);
+        transactions.push({ from: debtor.id, to: creditor.id, amount: amount });
+
+        // Update balances after settlement
+        creditor.balance -= amount;
+        debtor.balance += amount; // debtor.balance is negative
+
+        // Remove settled creditors or debtors
+        if (Math.abs(creditor.balance) < 0.01) {
+            creditors.shift();
+        }
+        if (Math.abs(debtor.balance) < 0.01) {
+            debtors.shift();
+        }
+    }
+    return transactions;
+}
+
+// Handler to compute net balances from expenses, simplify them, and display simplified transactions
+async function simplifyDebtsHandler() {
+    // Open a transaction to get all expenses from the database.
+    const transaction = db.transaction(["expenses"], "readonly");
+    const expenseStore = transaction.objectStore("expenses");
+    const request = expenseStore.getAll();
+
+    request.onsuccess = async (event) => {
+        const expenses = event.target.result;
+        let balances = {};
+
+        // Compute net balances for each person
+        for (const expense of expenses) {
+            // The person who paid gets a positive balance
+            if (!balances[expense.personId]) balances[expense.personId] = 0;
+            balances[expense.personId] += parseFloat(expense.amount);
+
+            // Calculate how much each person should pay based on the expense’s split details.
+            const splitAmounts = calculateSplitAmounts(
+                parseFloat(expense.amount),
+                expense.splitType,
+                expense.splitDetails,
+                expense.splitWith,
+                expense.personId
+            );
+
+            // Each person involved (except the payer) gets a negative balance.
+            Object.entries(splitAmounts).forEach(([personId, amount]) => {
+                if (!balances[personId]) balances[personId] = 0;
+                balances[personId] -= amount;
+            });
+        }
+
+        // Use the simplifyDebts function to get a list of transactions.
+        const simplifiedTransactions = simplifyDebts(balances);
+
+        // Clear any existing simplified transactions in the UI.
+        $("#simplified-owes-list").empty();
+
+        // For each simplified transaction, get the person names and display the transaction.
+        for (const txn of simplifiedTransactions) {
+            const fromName = await getPersonName(parseInt(txn.from));
+            const toName = await getPersonName(parseInt(txn.to));
+            $("#simplified-owes-list").append(`
+                <li class="balance-item">
+                    <div class="balance-details">
+                        <div class="balance-name">${fromName} pays ${toName}</div>
+                    </div>
+                    <div class="balance-amount">
+                        ₹${txn.amount.toFixed(2)}
+                    </div>
+                </li>
+            `);
+        }
+    };
+
+    request.onerror = () => {
+        alert("Error retrieving expenses for debt simplification.");
     };
 }
