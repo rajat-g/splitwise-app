@@ -58,10 +58,6 @@ function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith, 
             splitWith.forEach(id => {
                 amounts[id] = sharePerPerson;
             });
-			// Remove payer's amount only if they're in splitWith
-            if (splitWith.includes(personId)) {
-                delete amounts[personId];
-            }
             break;
 
         case 'exact':
@@ -83,11 +79,6 @@ function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith, 
             splitWith.forEach((id, index) => {
                 amounts[id] = perShare * parseFloat(splitDetails[index]);
             });
-            
-            // Remove payer's amount only if they're in splitWith
-            if (splitWith.includes(personId)) {
-                delete amounts[personId];
-            }
             break;
     }
 
