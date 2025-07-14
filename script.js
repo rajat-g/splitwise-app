@@ -22,6 +22,21 @@ request.onsuccess = (event) => {
     db = event.target.result;
     loadPersons();
     loadExpenses();
+    // On page load, check for data param
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('data')) {
+        const compressed = params.get('data');
+        const json = LZString.decompressFromEncodedURIComponent(compressed);
+        if (!json) {
+            alert('Invalid shared data.');
+        } else {
+            if (confirm('This will clear existing data and load shared data. Continue?')) {
+                const parsed = JSON.parse(json);
+                loadIntoIndexedDB(parsed);
+                location.search = '';
+            }
+        }
+    }
 };
 
 function addPerson(name) {
@@ -386,21 +401,7 @@ $(document).ready(() => {
         simplifyDebtsHandler();
     });
 
-    // On page load, check for data param
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('data')) {
-        const compressed = params.get('data');
-        const json = LZString.decompressFromEncodedURIComponent(compressed);
-        if (!json) {
-            alert('Invalid shared data.');
-        } else {
-            if (confirm('This will clear existing data and load shared data. Continue?')) {
-                const parsed = JSON.parse(json);
-                loadIntoIndexedDB(parsed);
-                location.search = '';
-            }
-        }
-    }
+    
 
 });
 
