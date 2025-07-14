@@ -1,6 +1,6 @@
 const dbName = "splitwiseDB";
 let db;
-
+const MAX_URL_LENGTH = 2000;
 // Open (or create) the database
 const request = indexedDB.open(dbName, 2); // Increased version number
 
@@ -44,6 +44,7 @@ function loadPersons() {
             $("#person-select").append(`<option value="${person.id}">${person.name}</option>`);
             $("#split-with").append(`<option value="${person.id}">${person.name}</option>`);
         });
+        updatePersonSharesList();
     };
 }
 
@@ -54,7 +55,7 @@ function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith, 
         case 'equal':
             const totalPeople = splitWith.length;
             const sharePerPerson = totalAmount / totalPeople;
-            
+
             splitWith.forEach(id => {
                 amounts[id] = sharePerPerson;
             });
@@ -71,11 +72,11 @@ function calculateSplitAmounts(totalAmount, splitType, splitDetails, splitWith, 
                 amounts[id] = (totalAmount * parseFloat(splitDetails[index])) / 100;
             });
             break;
-			
-		case 'shares':
+
+        case 'shares':
             const totalShares = splitDetails.reduce((sum, share) => sum + parseFloat(share), 0);
             const perShare = totalAmount / totalShares;
-            
+
             splitWith.forEach((id, index) => {
                 amounts[id] = perShare * parseFloat(splitDetails[index]);
             });
@@ -119,21 +120,21 @@ function loadExpenses() {
             const splitWithNames = await Promise.all(expense.splitWith.map(id => getPersonName(id)));
 
             let splitDetailsStr = '';
-			// Get all persons from the DB to check if all are involved
-			const allPersons = await new Promise((resolve) => {
-				const transaction = db.transaction(["persons"], "readonly");
-				const objectStore = transaction.objectStore("persons");
-				const req = objectStore.getAll();
-				req.onsuccess = (event) => resolve(event.target.result);
-			});
+            // Get all persons from the DB to check if all are involved
+            const allPersons = await new Promise((resolve) => {
+                const transaction = db.transaction(["persons"], "readonly");
+                const objectStore = transaction.objectStore("persons");
+                const req = objectStore.getAll();
+                req.onsuccess = (event) => resolve(event.target.result);
+            });
             switch (expense.splitType) {
                 case 'equal':
-					if(expense.splitWith.length === allPersons.length) {
-						splitDetailsStr = 'Split equally';
-					} else {
-						splitDetailsStr = `Split equally between: ${expense.splitWith.map((amount, i) =>
-                        `${splitWithNames[i]}`).join(', ')}`;
-					}
+                    if (expense.splitWith.length === allPersons.length) {
+                        splitDetailsStr = 'Split equally';
+                    } else {
+                        splitDetailsStr = `Split equally between: ${expense.splitWith.map((amount, i) =>
+                            `${splitWithNames[i]}`).join(', ')}`;
+                    }
                     break;
                 case 'exact':
                     splitDetailsStr = `Split exactly: ${expense.splitDetails.map((amount, i) =>
@@ -144,27 +145,27 @@ function loadExpenses() {
                         `${splitWithNames[i]}: ${percent}%`).join(', ')}`;
                     break;
                 case 'shares':
-					const allPersonIds = allPersons.map(person => person.id.toString());
-					// Check if the expense involves all persons in the DB
-					const allInvolved = (expense.splitWith.length === allPersonIds.length) &&
-										allPersonIds.every(id => expense.splitWith.includes(id));
-					
-					if (allInvolved) {
-						// Check if everyone has the same share
-						const shares = expense.splitDetails.map(s => parseFloat(s));
-						const firstShare = shares[0];
-						const allSame = shares.every(s => Math.abs(s - firstShare) < 0.001);
-						if (allSame) {
-							splitDetailsStr = "Split Equally";
-						} else {
-							splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
-								`${splitWithNames[i]}: ${share} shares`).join(', ')}`;
-						}
-					} else {
-						splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
-							`${splitWithNames[i]}: ${share} shares`).join(', ')}`;
-					}
-					break;
+                    const allPersonIds = allPersons.map(person => person.id.toString());
+                    // Check if the expense involves all persons in the DB
+                    const allInvolved = (expense.splitWith.length === allPersonIds.length) &&
+                        allPersonIds.every(id => expense.splitWith.includes(id));
+
+                    if (allInvolved) {
+                        // Check if everyone has the same share
+                        const shares = expense.splitDetails.map(s => parseFloat(s));
+                        const firstShare = shares[0];
+                        const allSame = shares.every(s => Math.abs(s - firstShare) < 0.001);
+                        if (allSame) {
+                            splitDetailsStr = "Split Equally";
+                        } else {
+                            splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
+                                `${splitWithNames[i]}: ${share} shares`).join(', ')}`;
+                        }
+                    } else {
+                        splitDetailsStr = `Split by shares: ${expense.splitDetails.map((share, i) =>
+                            `${splitWithNames[i]}: ${share} shares`).join(', ')}`;
+                    }
+                    break;
 
             }
 
@@ -253,6 +254,7 @@ function loadExpenses() {
                 </li>
             `);
         }
+        updatePersonSharesList();
     };
 }
 
@@ -280,8 +282,8 @@ $(document).ready(() => {
         const splitType = $(this).val();
         const selectedPeople = $("#split-with").val();
         const selectedPayer = $("#person-select").val();
-		
-    $("#split-details-container").empty();
+
+        $("#split-details-container").empty();
 
         $("#split-details-container").empty();
 
@@ -289,10 +291,10 @@ $(document).ready(() => {
             // Get names for all selected people
             const detailsHtml = await Promise.all(selectedPeople.map(async personId => {
                 const personName = await getPersonName(parseInt(personId));
-				const placeholder = splitType === 'percentage' ? 'Percentage' :
-                              splitType === 'shares' ? 'Shares' : 'Amount';
-				const symbol = splitType === 'percentage' ? '%' :
-                           splitType === 'shares' ? 'shares' : '₹';
+                const placeholder = splitType === 'percentage' ? 'Percentage' :
+                    splitType === 'shares' ? 'Shares' : 'Amount';
+                const symbol = splitType === 'percentage' ? '%' :
+                    splitType === 'shares' ? 'shares' : '₹';
                 return `
                     <div class="split-detail">
                         <label>${personName}:</label>
@@ -337,19 +339,19 @@ $(document).ready(() => {
         let splitDetails = [];
         if (splitType !== 'equal') {
             splitDetails = Array.from($(".split-detail-input")).map(input => $(input).val());
-			
-			if (splitType === 'shares') {
-				const shares = splitDetails.map(s => parseFloat(s));
-				if (shares.some(s => s <= 0)) {
-					alert("Shares must be positive numbers!");
-					return;
-				}
-				const totalShares = shares.reduce((a, b) => a + b, 0);
-				if (totalShares <= 0) {
-					alert("Total shares must be greater than zero!");
-					return;
-				}
-			}
+
+            if (splitType === 'shares') {
+                const shares = splitDetails.map(s => parseFloat(s));
+                if (shares.some(s => s <= 0)) {
+                    alert("Shares must be positive numbers!");
+                    return;
+                }
+                const totalShares = shares.reduce((a, b) => a + b, 0);
+                if (totalShares <= 0) {
+                    alert("Total shares must be greater than zero!");
+                    return;
+                }
+            }
 
             // Validate total for exact amounts
             if (splitType === 'exact') {
@@ -380,9 +382,26 @@ $(document).ready(() => {
         $("#split-details-container").empty();
     });
 
-	$("#simplify-debts").click(function() {
+    $("#simplify-debts").click(function () {
         simplifyDebtsHandler();
     });
+
+    // On page load, check for data param
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('data')) {
+        const compressed = params.get('data');
+        const json = LZString.decompressFromEncodedURIComponent(compressed);
+        if (!json) {
+            alert('Invalid shared data.');
+        } else {
+            if (confirm('This will clear existing data and load shared data. Continue?')) {
+                const parsed = JSON.parse(json);
+                loadIntoIndexedDB(parsed);
+                location.search = '';
+            }
+        }
+    }
+
 });
 
 // Function to delete an expense from the database
@@ -417,7 +436,7 @@ function clearDatabase() {
         $("#person-select").empty();
         $("#split-with").empty();
         $("#split-details-container").empty();
-
+        $("#person-shares-list").empty();
         alert("All data has been cleared successfully!");
     };
 
@@ -522,5 +541,110 @@ async function simplifyDebtsHandler() {
 
     request.onerror = () => {
         alert("Error retrieving expenses for debt simplification.");
+    };
+}
+
+function updatePersonSharesList() {
+    // Get all persons and expenses from the DB
+    const transaction = db.transaction(["persons", "expenses"], "readonly");
+    const personStore = transaction.objectStore("persons");
+    const expenseStore = transaction.objectStore("expenses");
+    const personsReq = personStore.getAll();
+    const expensesReq = expenseStore.getAll();
+
+    personsReq.onsuccess = function () {
+        const persons = personsReq.result;
+        expensesReq.onsuccess = function () {
+            const expenses = expensesReq.result;
+            // Calculate total share for each person
+            const personTotals = {};
+            persons.forEach(person => {
+                personTotals[person.id] = 0;
+            });
+            expenses.forEach(expense => {
+                const splitAmounts = calculateSplitAmounts(
+                    parseFloat(expense.amount),
+                    expense.splitType,
+                    expense.splitDetails,
+                    expense.splitWith,
+                    expense.personId
+                );
+                Object.entries(splitAmounts).forEach(([personId, amount]) => {
+                    if (personTotals[personId] !== undefined) {
+                        personTotals[personId] += amount;
+                    }
+                });
+            });
+            // Update the UI
+            $("#person-shares-list").empty();
+            persons.forEach(person => {
+                $("#person-shares-list").append(
+                    `<div class="person-share-card">
+                        <span>${person.name}</span>
+                        <span>₹${personTotals[person.id].toFixed(2)}</span>
+                    </div>`
+                );
+            });
+        };
+    };
+}
+
+$('#share-db').click(async () => {
+    try {
+        const allData = await readAllIndexedDB();
+        const json = JSON.stringify(allData);
+        const compressed = LZString.compressToEncodedURIComponent(json);
+        const url = `${location.origin + location.pathname}?data=${compressed}`;
+        if (url.length > MAX_URL_LENGTH) {
+            $('#share-error').text('Data too large to share via URL.');
+        } else {
+            $('#share-error').text('');
+            $('#share-link').val(url);
+            $('#share-modal').removeClass('hidden');
+        }
+    } catch (e) {
+        $('#share-error').text('Error preparing data for sharing.');
+    }
+});
+
+$('#share-close').click(() => {
+    $('#share-modal').addClass('hidden');
+});
+
+
+
+
+// Function to read all stores
+async function readAllIndexedDB() {
+    return new Promise((resolve, reject) => {
+        const result = {};
+        const txn = db.transaction(db.objectStoreNames, 'readonly');
+        txn.onerror = () => reject(txn.error);
+        for (const name of db.objectStoreNames) {
+            const storeReq = txn.objectStore(name).getAll();
+            storeReq.onsuccess = () => {
+                result[name] = storeReq.result;
+                if (Object.keys(result).length === db.objectStoreNames.length) {
+                    resolve(result);
+                }
+            };
+        }
+    });
+}
+
+// Function to clear and load data
+function loadIntoIndexedDB(data) {
+    const txn = db.transaction(db.objectStoreNames, 'readwrite');
+    for (const name of db.objectStoreNames) {
+        const store = txn.objectStore(name);
+        store.clear();
+        const items = data[name] || [];
+        items.forEach(item => store.add(item));
+    }
+    txn.oncomplete = () => {
+        loadPersons();
+        loadExpenses();
+        updatePersonSharesList();
+        alert('Shared data loaded successfully!');
     };
 }

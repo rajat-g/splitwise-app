@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,7 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 </head>
+
 <body>
   <!-- Header -->
   <header>
@@ -25,6 +28,19 @@
         <button id="clear-db" type="button" class="danger-button" onclick="clearDatabase();">
           Clear All Data
         </button>
+        <button id="share-db" type="button" class="primary-button">
+          Share Data
+        </button>
+      </div>
+
+      <!-- Modal for share link and warnings -->
+      <div id="share-modal" class="modal hidden">
+        <div class="modal-content">
+          <span class="close" id="share-close">&times;</span>
+          <h3>Shareable Link</h3>
+          <textarea id="share-link" readonly></textarea>
+          <div id="share-error" class="error-message"></div>
+        </div>
       </div>
 
       <!-- Person Form -->
@@ -34,7 +50,7 @@
           <button type="submit" class="primary-button">Add Person</button>
         </form>
       </section>
-      
+
       <!-- Expense Form -->
       <section id="expense-section">
         <form id="expense-form">
@@ -78,6 +94,12 @@
         <ul id="owes-list"></ul>
       </section>
 
+      <!-- Person Shares List (moved here) -->
+      <section id="person-shares-section">
+        <h2>Expense Summary</h2>
+        <div class="card" id="person-shares-list"></div>
+      </section>
+
       <!-- Simplified Debts Section -->
       <section id="simplified-debts-section">
         <h2>Simplified Debts</h2>
@@ -89,4 +111,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>
