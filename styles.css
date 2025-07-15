@@ -328,22 +328,35 @@ textarea#share-link {
 }
 
 #person-shares-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
+  display: grid; /* Changed from flex to grid */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Ensures responsive, uniform columns */
+  gap: 1rem; /* Gap between grid items */
 }
 
 .person-share-card {
   background: #f9fafb;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  min-width: 180px;
-  box-shadow: var(--shadow);
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: var(--text);
+  border-radius: 12px; /* Increased border-radius */
+  padding: 1rem; /* Adjusted padding */
+  box-shadow: rgba(0, 0, 0, 0.05) 0px 1px 2px 0px; /* More subtle shadow */
+  text-align: center; /* Center align content */
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  height: 100px; /* Fixed height for uniformity */
+  width: 100%; /* Ensure it takes full grid column width */
+}
+
+.person-share-card span:first-child {
+  font-size: 1rem; /* Smaller font size for name */
+  font-weight: 600; /* Bolder font for name */
+  color: var(--text);
+  margin-bottom: 0.4rem; /* Spacing between name and amount */
+}
+
+.person-share-card span:last-child {
+  font-size: 1.5rem; /* Larger font size for amount */
+  font-weight: 700; /* Bolder font for amount */
+  color: #00a2e8; /* Highlighted color for amount */
 }

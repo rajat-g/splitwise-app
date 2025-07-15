@@ -4,112 +4,164 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simple Splitwise App</title>
-  <!-- Google Fonts for modern typography -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>Splitwise - Modern Bill Splitting</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
+  <!-- jQuery and LZ-String (from original file) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+
+  <style>
+    
+  </style>
 </head>
 
-<body>
+<body class="bg-slate-50">
+
   <!-- Header -->
-  <header>
-    <div class="header-container">
-      <h1>Splitwise App</h1>
+  <header class="bg-white shadow-sm sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-gray-900">
+          <span class="text-blue-600">Split</span>wise
+        </h1>
+        <div class="flex items-center gap-2">
+            <button id="share-db" type="button" class="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                <span class="hidden sm:inline">Share Data</span>
+            </button>
+            <button id="clear-db" type="button" class="flex items-center gap-2 bg-red-100 text-red-600 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75" onclick="clearDatabase();">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                <span class="hidden sm:inline">Clear Data</span>
+            </button>
+        </div>
+      </div>
     </div>
   </header>
 
   <!-- Main Content -->
-  <main>
-    <div class="container">
-      <!-- Clear Database -->
-      <div class="clear-db-container">
-        <button id="clear-db" type="button" class="danger-button" onclick="clearDatabase();">
-          Clear All Data
-        </button>
-        <button id="share-db" type="button" class="primary-button">
-          Share Data
-        </button>
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+
+      <!-- Left Column: Forms -->
+      <div class="lg:col-span-2 space-y-8">
+        <!-- Add Person Card -->
+        <section id="person-section" class="bg-white p-6 rounded-2xl shadow-lg">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Add Person</h2>
+          <form id="person-form" class="flex flex-col sm:flex-row gap-3">
+            <input type="text" id="person-name" placeholder="Enter a new name" required class="flex-grow bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all">
+            <button type="submit" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-3 transition-all shadow-md hover:shadow-lg">Add Person</button>
+          </form>
+        </section>
+
+        <!-- Add Expense Card -->
+        <section id="expense-section" class="bg-white p-6 rounded-2xl shadow-lg">
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Add Expense</h2>
+          <form id="expense-form" class="space-y-4">
+            <div class="form-group">
+              <label for="expense-name" class="block mb-2 text-sm font-medium text-gray-900">Expense Description</label>
+              <input type="text" id="expense-name" placeholder="e.g., Dinner, Groceries" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="form-group">
+                    <label for="amount" class="block mb-2 text-sm font-medium text-gray-900">Amount (₹)</label>
+                    <input type="number" id="amount" placeholder="0.00" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all">
+                </div>
+                <div class="form-group">
+                    <label for="person-select" class="block mb-2 text-sm font-medium text-gray-900">Paid by</label>
+                    <select id="person-select" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all"></select>
+                </div>
+            </div>
+            <div class="form-group">
+              <label for="split-with" class="block mb-2 text-sm font-medium text-gray-900">Split with</label>
+              <select id="split-with" multiple required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all h-24"></select>
+            </div>
+            <div class="form-group">
+              <label for="split-type" class="block mb-2 text-sm font-medium text-gray-900">Split Method</label>
+              <select id="split-type" required class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-3 transition-all">
+                <option value="equal">Split Equally</option>
+                <option value="exact">By Exact Amounts</option>
+                <option value="percentage">By Percentage</option>
+                <option value="shares">By Shares</option>
+              </select>
+            </div>
+            <div id="split-details-container" class="space-y-2"></div>
+            <div class="form-group pt-2">
+              <button type="submit" class="w-full text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-3.5 transition-all shadow-md hover:shadow-lg">Add Expense</button>
+            </div>
+          </form>
+        </section>
       </div>
 
-      <!-- Modal for share link and warnings -->
-      <div id="share-modal" class="modal hidden">
-        <div class="modal-content">
-          <span class="close" id="share-close">&times;</span>
-          <h3>Shareable Link</h3>
-          <textarea id="share-link" readonly></textarea>
-          <div id="share-error" class="error-message"></div>
+      <!-- Right Column: Data Display with Tabs -->
+      <div class="lg:col-span-3">
+        <div class="bg-white rounded-2xl shadow-lg">
+          <!-- Tab Headers -->
+          <div class="border-b border-gray-200">
+            <nav id="tab-nav" class="-mb-px flex space-x-1 sm:space-x-4 px-4" aria-label="Tabs">
+              <button data-tab-target="#expenses-list-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-600">Expenses</button>
+              <button data-tab-target="#balances-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Balances</button>
+              <button data-tab-target="#simplified-debts-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Simplified Debts</button>
+              <button data-tab-target="#person-shares-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Summary</button>
+            </nav>
+          </div>
+          
+          <!-- Tab Content -->
+          <div class="p-6">
+            <section id="expenses-list-section" class="tab-content">
+              <ul id="expense-list" class="max-h-[80vh] overflow-y-auto">
+                <!-- Expenses will be dynamically inserted here -->
+              </ul>
+            </section>
+
+            <section id="balances-section" class="tab-content hidden">
+              <ul id="owes-list" class="max-h-[80vh] overflow-y-auto">
+                <!-- Balances will be dynamically inserted here -->
+              </ul>
+            </section>
+
+            <section id="person-shares-section" class="tab-content hidden">
+              <div id="person-shares-list" class="max-h-[80vh] overflow-y-auto">
+                <!-- Person shares summary will be dynamically inserted here -->
+              </div>
+            </section>
+
+            <section id="simplified-debts-section" class="tab-content hidden">
+                
+                <ul id="simplified-owes-list" class="max-h-[70vh] overflow-y-auto">
+                    <!-- Simplified debts will be dynamically inserted here -->
+                </ul>
+            </section>
+          </div>
         </div>
       </div>
-
-      <!-- Person Form -->
-      <section id="person-section">
-        <form id="person-form">
-          <input type="text" id="person-name" placeholder="Enter name" required>
-          <button type="submit" class="primary-button">Add Person</button>
-        </form>
-      </section>
-
-      <!-- Expense Form -->
-      <section id="expense-section">
-        <form id="expense-form">
-          <div class="form-group">
-            <input type="text" id="expense-name" placeholder="Expense Name" required>
-          </div>
-          <div class="form-group">
-            <input type="number" id="amount" placeholder="Amount" required>
-            <span class="input-label">Paid by</span>
-            <select id="person-select" required></select>
-          </div>
-          <div class="form-group">
-            <label for="split-with">Split with:</label>
-            <select id="split-with" multiple required></select>
-          </div>
-          <div class="form-group">
-            <label for="split-type">Split Type:</label>
-            <select id="split-type" required>
-              <option value="equal">Equal Split</option>
-              <option value="exact">Exact Amounts</option>
-              <option value="percentage">Percentage Split</option>
-              <option value="shares">Share Split</option>
-            </select>
-          </div>
-          <div id="split-details-container"></div>
-          <div class="form-group">
-            <button type="submit" class="primary-button">Add Expense</button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Expenses List -->
-      <section id="expenses-list-section">
-        <h2>Expenses</h2>
-        <ul id="expense-list"></ul>
-      </section>
-
-      <!-- Balances List -->
-      <section id="balances-section">
-        <h2>Balances</h2>
-        <ul id="owes-list"></ul>
-      </section>
-
-      <!-- Person Shares List (moved here) -->
-      <section id="person-shares-section">
-        <h2>Expense Summary</h2>
-        <div class="card" id="person-shares-list"></div>
-      </section>
-
-      <!-- Simplified Debts Section -->
-      <section id="simplified-debts-section">
-        <h2>Simplified Debts</h2>
-        <button id="simplify-debts" type="button" class="primary-button">Simplify Debts</button>
-        <ul id="simplified-owes-list"></ul>
-      </section>
     </div>
   </main>
 
-  <script src="script.js"></script>
-</body>
+  <!-- Modal for Share Link -->
+  <div id="share-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div class="modal-content bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
+      <button id="share-close" class="close absolute top-4 right-4 text-gray-400 hover:text-gray-800">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+      <h3 class="text-xl font-bold text-gray-800 mb-4">Shareable Link</h3>
+      <p class="text-sm text-gray-600 mb-2">Copy this link to share the current state of your expenses with others. When they open it, they'll have the option to load your data.</p>
+      <textarea id="share-link" readonly class="w-full h-28 p-3 bg-gray-100 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+      <div id="share-error" class="error-message text-red-600 text-sm mt-2"></div>
+    </div>
+  </div>
 
+  <!-- All of the original JavaScript logic -->
+  <script>
+    
+  </script>
+<script src="script.js"></script>
+</body>
 </html>
