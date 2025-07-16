@@ -532,7 +532,7 @@ const dbName = "splitwiseDB";
         persons.forEach(person => {
             let html = `<div class="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-200">
                 <div class="font-bold text-lg mb-2 text-blue-700">${person.name}</div>
-                <table class="w-full text-sm mb-2">
+                <table class="detailed-summary-table w-full text-sm mb-2">
                     <thead><tr>
                         <th class="text-left p-1">Expense</th>
                         <th class="text-left p-1">Paid By</th>
