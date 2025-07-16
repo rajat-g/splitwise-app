@@ -504,8 +504,84 @@ const dbName = "splitwiseDB";
                         </div>`
                     );
                 });
+
+                // --- DETAILED SUMMARY LOGIC ---
+                updateDetailedSummary(persons, expenses);
             };
         };
+    }
+
+    // Add this function for detailed summary
+    function updateDetailedSummary(persons, expenses) {
+        const container = $("#detailed-summary-list");
+        container.empty();
+        if (persons.length === 0) {
+            container.html(`<div class="text-center text-gray-500 py-10">
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No one here yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Add people to see their detailed summary.</p>
+            </div>`);
+            return;
+        }
+        if (expenses.length === 0) {
+            container.html(`<div class="text-center text-gray-500 py-10">
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No expenses yet</h3>
+                <p class="mt-1 text-sm text-gray-500">Add expenses to see detailed summary.</p>
+            </div>`);
+            return;
+        }
+        persons.forEach(person => {
+            let html = `<div class="mb-6 bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <div class="font-bold text-lg mb-2 text-blue-700">${person.name}</div>
+                <table class="w-full text-sm mb-2">
+                    <thead><tr>
+                        <th class="text-left p-1">Expense</th>
+                        <th class="text-left p-1">Paid By</th>
+                        <th class="text-right p-1">Total</th>
+                        <th class="text-right p-1">Their Share</th>
+                        <th class="text-left p-1">Split Type</th>
+                    </tr></thead>
+                    <tbody>`;
+            let hasShare = false;
+            let totalShare = 0;
+            expenses.forEach(expense => {
+                const splitAmounts = calculateSplitAmounts(
+                    parseFloat(expense.amount), expense.splitType, expense.splitDetails, expense.splitWith, expense.personId
+                );
+                if (splitAmounts[person.id] !== undefined) {
+                    hasShare = true;
+                    totalShare += splitAmounts[person.id];
+                    html += `<tr>
+                        <td class="p-1">${expense.name}</td>
+                        <td class="p-1">${persons.find(p => p.id == expense.personId)?.name || 'Unknown'}</td>
+                        <td class="p-1 text-right">₹${parseFloat(expense.amount).toFixed(2)}</td>
+                        <td class="p-1 text-right">₹${splitAmounts[person.id].toFixed(2)}</td>
+                        <td class="p-1">${capitalize(expense.splitType)}</td>
+                    </tr>`;
+                }
+            });
+            // Add total row if there was at least one share
+            if (hasShare) {
+                html += `<tr><td colspan="5"><hr></td></tr>`;
+                html += `<tr class="font-bold">
+                    <td class="p-1">Total</td>
+                    <td class="p-1"></td>
+                    <td class="p-1"></td>
+                    <td class="p-1 text-right">₹${totalShare.toFixed(2)}</td>
+                    <td class="p-1"></td>
+                </tr>`;
+            }
+            html += `</tbody></table>`;
+            if (!hasShare) {
+                html += `<div class="text-gray-400 text-sm">No share in any expense.</div>`;
+            }
+            html += `</div>`;
+            container.append(html);
+        });
+    }
+
+    // Helper to capitalize split type
+    function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
     $('#share-db').click(async () => {
