@@ -561,8 +561,7 @@ const dbName = "splitwiseDB";
             });
             // Add total row if there was at least one share
             if (hasShare) {
-                html += `<tr><td colspan="5"><hr></td></tr>`;
-                html += `<tr class="font-bold">
+                html += `<tr class="font-bold border-t border-gray-300">
                     <td class="p-1">Total</td>
                     <td class="p-1"></td>
                     <td class="p-1"></td>

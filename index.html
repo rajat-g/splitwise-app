@@ -6,15 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Splitwise - Modern Bill Splitting</title>
   
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
-  <!-- jQuery and LZ-String (from original file) -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 
@@ -25,7 +22,6 @@
 
 <body class="bg-slate-50">
 
-  <!-- Header -->
   <header class="bg-white shadow-sm sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div class="flex justify-between items-center">
@@ -46,13 +42,10 @@
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
 
-      <!-- Left Column: Forms -->
       <div class="lg:col-span-2 space-y-8">
-        <!-- Add Person Card -->
         <section id="person-section" class="bg-white p-6 rounded-2xl shadow-lg">
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Add Person</h2>
           <form id="person-form" class="flex flex-col sm:flex-row gap-3">
@@ -61,7 +54,6 @@
           </form>
         </section>
 
-        <!-- Add Expense Card -->
         <section id="expense-section" class="bg-white p-6 rounded-2xl shadow-lg">
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Add Expense</h2>
           <form id="expense-form" class="space-y-4">
@@ -100,51 +92,43 @@
         </section>
       </div>
 
-      <!-- Right Column: Data Display with Tabs -->
       <div class="lg:col-span-3">
         <div class="bg-white rounded-2xl shadow-lg">
-          <!-- Tab Headers -->
           <div class="border-b border-gray-200">
             <nav id="tab-nav" class="-mb-px flex space-x-1 sm:space-x-4 px-4" aria-label="Tabs">
-              <button data-tab-target="#expenses-list-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-600">Expenses</button>
-              <button data-tab-target="#balances-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Balances</button>
-              <button data-tab-target="#simplified-debts-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Simplified Debts</button>
-              <button data-tab-target="#person-shares-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Summary</button>
-              <button data-tab-target="#detailed-summary-section" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Detailed Summary</button>
+              <button data-tab-target="#expenses-list-section" class="tab-btn py-4 px-1 border-b-2 font-medium text-sm text-blue-600 border-blue-600">Expenses</button>
+              <button data-tab-target="#balances-section" class="tab-btn py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Balances</button>
+              <button data-tab-target="#simplified-debts-section" class="tab-btn py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Simplified Debts</button>
+              <button data-tab-target="#person-shares-section" class="tab-btn py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">Summary</button>
+              <button data-tab-target="#detailed-summary-section" class="tab-btn py-4 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-700 border-transparent">Detailed Summary</button>
             </nav>
           </div>
           
-          <!-- Tab Content -->
           <div class="p-6">
             <section id="expenses-list-section" class="tab-content">
               <ul id="expense-list" class="max-h-[80vh] overflow-y-auto">
-                <!-- Expenses will be dynamically inserted here -->
-              </ul>
+                </ul>
             </section>
 
             <section id="balances-section" class="tab-content hidden">
               <ul id="owes-list" class="max-h-[80vh] overflow-y-auto">
-                <!-- Balances will be dynamically inserted here -->
-              </ul>
+                </ul>
             </section>
 
             <section id="person-shares-section" class="tab-content hidden">
               <div id="person-shares-list" class="max-h-[80vh] overflow-y-auto">
-                <!-- Person shares summary will be dynamically inserted here -->
-              </div>
+                </div>
             </section>
 
             <section id="detailed-summary-section" class="tab-content hidden">
-              <div id="detailed-summary-list" class="max-h-[80vh] overflow-y-auto">
-                <!-- Detailed summary will be dynamically inserted here -->
-              </div>
+              <div id="detailed-summary-list" class="max-h-[80vh] overflow-x-auto">
+                </div>
             </section>
 
             <section id="simplified-debts-section" class="tab-content hidden">
                 
                 <ul id="simplified-owes-list" class="max-h-[70vh] overflow-y-auto">
-                    <!-- Simplified debts will be dynamically inserted here -->
-                </ul>
+                    </ul>
             </section>
           </div>
         </div>
@@ -152,7 +136,6 @@
     </div>
   </main>
 
-  <!-- Modal for Share Link -->
   <div id="share-modal" class="modal hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
     <div class="modal-content bg-white p-6 rounded-2xl shadow-xl w-full max-w-md relative">
       <button id="share-close" class="close absolute top-4 right-4 text-gray-400 hover:text-gray-800">
@@ -165,7 +148,6 @@
     </div>
   </div>
 
-  <!-- All of the original JavaScript logic -->
   <script>
     
   </script>
